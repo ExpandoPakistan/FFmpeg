@@ -6,7 +6,7 @@ NPROC=$(grep -c ^processor /proc/cpuinfo)
 ROOT_DIR=$PWD
 BUILD_DIR=$ROOT_DIR/build
 EM_TOOLCHAIN_FILE=/emsdk_portable/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
-PTHREAD_FLAGS='-s USE_PTHREADS=1'
+PTHREAD_FLAGS='-s USE_PTHREADS=0'
 export CFLAGS=$PTHREAD_FLAGS
 export CPPFLAGS=$PTHREAD_FLAGS
 export LDFLAGS=$PTHREAD_FLAGS
@@ -74,8 +74,6 @@ configure_ffmpeg() {
     --arch=i686 \
     --enable-gpl \
     --enable-libx264 \
-    --enable-libvpx \
-    --enable-libmp3lame \
     --enable-cross-compile \
     --disable-x86asm \
     --disable-inline-asm \
@@ -84,6 +82,7 @@ configure_ffmpeg() {
     --disable-ffprobe \
     --disable-ffplay \
     --disable-ffmpeg \
+    --disable-pthreads \
     --ignore-tests=$(cat all-tests) \
     --prefix=$BUILD_DIR \
     --extra-cflags="-I$BUILD_DIR/include" \
@@ -110,17 +109,15 @@ build_ffmpegjs() {
     -Llibavcodec -Llibavdevice -Llibavfilter -Llibavformat -Llibavresample -Llibavutil -Llibpostproc -Llibswscale -Llibswresample -Llibpostproc -L${BUILD_DIR}/lib \
     -Qunused-arguments -Oz \
     -o $2 fftools/ffmpeg_opt.c fftools/ffmpeg_filter.c fftools/ffmpeg_hw.c fftools/cmdutils.c fftools/ffmpeg.c \
-    -lavdevice -lavfilter -lavformat -lavcodec -lswresample -lswscale -lavutil -lpostproc -lm -lx264 -lz -lvpx -lmp3lame \
+    -lavdevice -lavfilter -lavformat -lavcodec -lswresample -lswscale -lavutil -lpostproc -lm -lx264 -lz \
     -Wno-deprecated-declarations -Wno-pointer-sign -Wno-implicit-int-float-conversion -Wno-switch -Wno-parentheses \
     --pre-js javascript/prepend.js \
     --post-js javascript/post.js \
     -s USE_SDL=2 \
     $PTHREAD_FLAGS \
     -s INVOKE_RUN=0 \
-    -s PTHREAD_POOL_SIZE=8 \
-    -s PROXY_TO_PTHREAD=1 \
     -s SINGLE_FILE=$1 \
-    -s EXPORTED_FUNCTIONS="[_main, _proxy_main]" \
+    -s EXPORTED_FUNCTIONS="[_main]" \
     -s EXTRA_EXPORTED_RUNTIME_METHODS="[cwrap, FS, getValue, setValue]" \
     -s TOTAL_MEMORY=1065353216
 }
@@ -129,12 +126,12 @@ main() {
   clean_up
   build_zlib
   build_x264
-  build_libvpx
-  build_libmp3lame
+  #build_libvpx
+  #build_libmp3lame
   configure_ffmpeg
   make_ffmpeg
   build_ffmpegjs 1 dist/ffmpeg-core.js
-  build_ffmpegjs 0 dist-wasm/ffmpeg-core.js
+  #build_ffmpegjs 0 dist-wasm/ffmpeg-core.js
 }
 
 main "$@"
