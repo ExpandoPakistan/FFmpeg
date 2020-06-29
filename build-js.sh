@@ -6,7 +6,7 @@ NPROC=$(grep -c ^processor /proc/cpuinfo)
 ROOT_DIR=$PWD
 BUILD_DIR=$ROOT_DIR/build
 EM_TOOLCHAIN_FILE=/emsdk_portable/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
-PTHREAD_FLAGS='-s USE_PTHREADS=0'
+PTHREAD_FLAGS='-s USE_PTHREADS=1'
 export CFLAGS=$PTHREAD_FLAGS
 export CPPFLAGS=$PTHREAD_FLAGS
 export LDFLAGS=$PTHREAD_FLAGS
@@ -82,7 +82,6 @@ configure_ffmpeg() {
     --disable-ffprobe \
     --disable-ffplay \
     --disable-ffmpeg \
-    --disable-pthreads \
     --ignore-tests=$(cat all-tests) \
     --prefix=$BUILD_DIR \
     --extra-cflags="-I$BUILD_DIR/include" \
@@ -116,8 +115,10 @@ build_ffmpegjs() {
     -s USE_SDL=2 \
     $PTHREAD_FLAGS \
     -s INVOKE_RUN=0 \
+    -s PTHREAD_POOL_SIZE=1 \
+    -s PROXY_TO_PTHREAD=1 \
     -s SINGLE_FILE=$1 \
-    -s EXPORTED_FUNCTIONS="[_main]" \
+    -s EXPORTED_FUNCTIONS="[_main, _proxy_main]" \
     -s EXTRA_EXPORTED_RUNTIME_METHODS="[cwrap, FS, getValue, setValue]" \
     -s TOTAL_MEMORY=1065353216
 }
